@@ -1,23 +1,37 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="glass-panel" style="max-width: 400px; margin: 4rem auto;">
-    <h2 style="margin-top: 0; text-align: center;">Login</h2>
-    <form method="post" action="{% url 'login' %}">
-        {% csrf_token %}
-        <div style="margin-bottom: 1rem;">
-            <label for="id_username" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Username:</label>
-            <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;">
+<div style="display: flex; flex: 1; align-items: center; justify-content: center; background-color: #f8fafc; min-height: calc(100vh - 65px);">
+    <div style="background: #fff; padding: 2.5rem; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid var(--border);">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2 style="margin: 0; font-size: 1.75rem; color: #3c4043; font-weight: 600;">Welcome Back</h2>
+            <p style="color: #5f6368; margin-top: 0.5rem; font-size: 0.95rem;">Please log in to your Collaborative Calendar</p>
         </div>
-        <div style="margin-bottom: 1.5rem;">
-            <label for="id_password" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Password:</label>
-            <input type="password" name="password" autocomplete="current-password" required id="id_password" style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;">
+        
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div style="margin-bottom: 1.25rem;">
+                <label for="id_username" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: #3c4043;">Username</label>
+                <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" style="width: 100%; padding: 0.875rem; border-radius: 6px; border: 1px solid var(--border); background: #fff; color: #3c4043; box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label for="id_password" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: #3c4043;">Password</label>
+                <input type="password" name="password" autocomplete="current-password" required id="id_password" style="width: 100%; padding: 0.875rem; border-radius: 6px; border: 1px solid var(--border); background: #fff; color: #3c4043; box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            
+            {% if form.errors %}
+                <div style="background-color: #fef2f2; color: #dc2626; padding: 0.75rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.875rem; border: 1px solid #f87171;">
+                    Your username and password didn't match. Please try again.
+                </div>
+            {% endif %}
+            
+            <button type="submit" class="btn" style="width: 100%; padding: 0.875rem; font-size: 1rem; border-radius: 6px; font-weight: 600;">Sign In</button>
+            <input type="hidden" name="next" value="{{ next }}">
+        </form>
+        
+        <div style="margin-top: 2rem; text-align: center; color: #9aa0a6; font-size: 0.8rem;">
+            &copy; {% now "Y" %} CME, Pune. All rights reserved.
         </div>
-        {% if form.errors %}
-            <p style="color: #ef4444; font-size: 0.9rem; margin-bottom: 1rem;">Your username and password didn't match. Please try again.</p>
-        {% endif %}
-        <button type="submit" class="btn" style="width: 100%; padding: 0.75rem;">Login</button>
-        <input type="hidden" name="next" value="{{ next }}">
-    </form>
+    </div>
 </div>
 {% endblock %}

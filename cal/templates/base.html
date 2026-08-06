@@ -43,6 +43,22 @@
             align-items: center;
             gap: 0.5rem;
         }
+        #globalSidebarToggle {
+            background: transparent;
+            border: none;
+            color: #5f6368;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+        }
+        #globalSidebarToggle:hover {
+            background-color: #f1f3f4;
+        }
 
         .user-info {
             display: flex;
@@ -88,10 +104,14 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>Collaborative Calendar</h1>
+        <h1>
+            <button id="globalSidebarToggle" title="Toggle Sidebar" style="background:#f1f3f4; border:1px solid #dadce0; border-radius:4px; padding:4px 8px; font-size:1.25rem; color:#3c4043; cursor:pointer; margin-right:8px;">☰</button>
+            Collaborative Calendar
+        </h1>
         <div class="user-info">
             {% if user.is_authenticated %}
                 <span>Welcome, <strong>{{ user.username }}</strong></span>
+                <a href="{% url 'export_ics' %}?calendar_id={{ selected_calendar.id }}" class="btn" style="background: white; color: var(--primary); border: 1px solid var(--border);">Export .ics</a>
                 <form action="{% url 'logout' %}" method="post" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit" class="btn">Logout</button>

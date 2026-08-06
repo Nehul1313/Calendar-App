@@ -84,3 +84,35 @@ def import_ics(request):
         url = f"/?calendar_id={calendar_id}" if calendar_id else "/"
         return redirect(url)
     return redirect('calendar')
+
+from django.http import HttpResponse
+
+@login_required
+def export_ics(request):
+    calendar_id = request.GET.get('calendar_id')
+    if calendar_id:
+        selected_calendar = get_object_or_404(Calendar, id=calendar_id, user=request.user)
+    else:
+        selected_calendar = request.user.calendars.first()
+        
+    if not selected_calendar:
+        return redirect('calendar')
+        
+    events = Event.objects.filter(calendar=selected_calendar)
+    
+    cal = icalendar.Calendar()
+    cal.add('prodid', '-//Collaborative Calendar//')
+    cal.add('version', '2.0')
+    
+    for event in events:
+        ievent = icalendar.Event()
+        ievent.add('summary', event.title)
+        ievent.add('description', event.description)
+        ievent.add('location', event.location)
+        ievent.add('dtstart', event.start_date)
+        ievent.add('dtend', event.end_date)
+        cal.add_component(ievent)
+        
+    response = HttpResponse(cal.to_ical(), content_type="text/calendar")
+    response['Content-Disposition'] = f'attachment; filename="{selected_calendar.name}.ics"'
+    return response
