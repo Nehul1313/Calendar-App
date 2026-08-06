@@ -46,6 +46,10 @@
         border: none;
         padding: 1px 4px;
     }
+    
+    .fc-timegrid-slot {
+        height: 2.5em !important;
+    }
 
     .selected-calendar-item {
         background: #f1f3f4;
@@ -600,6 +604,40 @@
             selectable: true,
             dayMaxEvents: true,
             events: initialEvents,
+            eventContent: function(arg) {
+                let titleText = arg.event.title;
+                let start = arg.event.start;
+                let end = arg.event.end || arg.event.start;
+                let durationMins = (end - start) / (1000 * 60);
+
+                let contentHtml = '';
+
+                // For month view or all-day events, render inline
+                if (arg.view.type === 'dayGridMonth' || arg.event.allDay) {
+                    contentHtml = `<div style="font-size: 0.9rem; padding: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">`;
+                    if (arg.timeText) {
+                        contentHtml += `<span style="font-weight: 500; opacity: 0.9; margin-right: 4px;">${arg.timeText}</span>`;
+                    }
+                    contentHtml += `<span style="font-weight: 600;">${titleText}</span>`;
+                    contentHtml += `</div>`;
+                } 
+                // For short events (<= 30 mins) in timeGrid views, render inline, only name
+                else if (durationMins <= 30) {
+                    contentHtml = `<div style="font-size: 0.9rem; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: flex-start;">`;
+                    contentHtml += `<span style="font-weight: 600; text-overflow: ellipsis; overflow: hidden;">${titleText}</span>`;
+                    contentHtml += `</div>`;
+                }
+                // For longer events, render multi-line
+                else {
+                    let timeRange = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' - ' + end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    contentHtml = `<div style="font-size: 0.9rem; padding: 2px 4px; display: flex; flex-direction: column; overflow: hidden; height: 100%;">`;
+                    contentHtml += `<div style="font-weight: 500; font-size: 0.85em; opacity: 0.9; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0;">${timeRange}</div>`;
+                    contentHtml += `<div style="font-weight: 600; white-space: normal; line-height: 1.2; overflow: hidden;">${titleText}</div>`;
+                    contentHtml += `</div>`;
+                }
+                
+                return { html: contentHtml };
+            },
             
             select: function(info) {
                 openModal(info);
