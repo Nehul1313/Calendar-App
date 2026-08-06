@@ -57,6 +57,17 @@ class CalendarConsumer(AsyncWebsocketConsumer):
                         'event': event
                     }
                 )
+        elif action == 'delete':
+            event_id = await self.delete_event(data)
+            if event_id:
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'calendar_update',
+                        'action': 'delete',
+                        'event': {'id': event_id, 'calendar_id': data.get('calendar_id')}
+                    }
+                )
 
     # Receive message from room group
     async def calendar_update(self, event):
@@ -122,5 +133,17 @@ class CalendarConsumer(AsyncWebsocketConsumer):
 
             event.save()
             return event.to_dict()
+        except Event.DoesNotExist:
+            return None
+
+    @database_sync_to_async
+    def delete_event(self, data):
+        try:
+            event = Event.objects.get(id=data['id'])
+            if event.user != self.scope["user"]:
+                return None
+            event_id = event.id
+            event.delete()
+            return event_id
         except Event.DoesNotExist:
             return None

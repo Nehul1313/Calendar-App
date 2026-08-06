@@ -101,7 +101,7 @@ def export_ics(request):
     events = Event.objects.filter(calendar=selected_calendar)
     
     cal = icalendar.Calendar()
-    cal.add('prodid', '-//Collaborative Calendar//')
+    cal.add('prodid', '-//Calendar//')
     cal.add('version', '2.0')
     
     for event in events:
