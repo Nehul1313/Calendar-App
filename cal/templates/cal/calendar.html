@@ -220,6 +220,18 @@
             <div id="mini-calendar"></div>
         </div>
 
+        {% if selected_calendar.user != user and selected_calendar not in subscribed_calendars %}
+        <div style="background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #1a73e8; font-size: 0.95rem;">Previewing: {{ selected_calendar.name }}</h4>
+            <p style="margin: 0 0 0.75rem 0; font-size: 0.85rem; color: #5f6368;">You are previewing a public calendar.</p>
+            <form method="post" action="{% url 'subscribe_calendar' selected_calendar.uuid %}" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="btn" style="width: 100%; background: #1a73e8;">Subscribe</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if not is_preview_mode %}
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="font-size: 0.875rem; color: #3c4043; font-weight: 500; margin:0;">My Calendars</h3>
             <button title="Create new calendar" class="btn" style="padding: 0.25rem 0.5rem; font-size: 1rem; line-height: 1; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;" onclick="const f = document.getElementById('createCalForm'); f.style.display = f.style.display === 'none' ? 'block' : 'none';">+</button>
@@ -236,33 +248,59 @@
         <ul class="calendar-list" style="margin-top: 0;">
             {% for cal in calendars %}
             <li>
-                <div class="{% if cal.id == selected_calendar.id %}selected-calendar-item{% endif %}" style="margin-bottom: 0.25rem;">
-                    <div id="cal-view-{{ cal.id }}" style="display:flex; align-items:center; justify-content:space-between;">
-                        <a href="?calendar_id={{ cal.id }}" class="{% if cal.id == selected_calendar.id %}active{% endif %}" style="flex-grow:1; margin-bottom:0; background:transparent;">
+                <div class="{% if cal.uuid == selected_calendar.uuid %}selected-calendar-item{% endif %}" style="margin-bottom: 0.25rem;">
+                    <div id="cal-view-{{ cal.uuid }}" style="display:flex; align-items:center; justify-content:space-between;">
+                        <a href="?calendar_uuid={{ cal.uuid }}" class="{% if cal.uuid == selected_calendar.uuid %}active{% endif %}" style="flex-grow:1; margin-bottom:0; background:transparent;">
                             <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:#1a73e8; margin-right:8px;"></span>
                             {{ cal.name }}
                         </a>
                         <div style="display:flex; gap:4px; padding-right:8px;">
-                            <button onclick="showRename('{{ cal.id }}')" style="background:none; border:none; cursor:pointer; color:#5f6368; font-size: 1.1rem; padding: 2px 4px;" title="Rename">&#9998;</button>
-                            <button onclick="showDelete('{{ cal.id }}', '{{ forloop.first|lower }}')" style="background:none; border:none; cursor:pointer; color:#dc3545; font-size: 1.1rem; padding: 2px 4px;" title="Delete">&#128465;</button>
+                            <button onclick="showRename('{{ cal.uuid }}')" style="background:none; border:none; cursor:pointer; color:#5f6368; font-size: 1.1rem; padding: 2px 4px;" title="Rename">&#9998;</button>
+                            <button onclick="showDelete('{{ cal.uuid }}', '{{ forloop.first|lower }}')" style="background:none; border:none; cursor:pointer; color:#dc3545; font-size: 1.1rem; padding: 2px 4px;" title="Delete">&#128465;</button>
                         </div>
                     </div>
-                    <div id="cal-edit-{{ cal.id }}" style="display:none; align-items:center; gap: 4px; padding: 4px 8px;">
-                        <input type="text" id="rename-input-{{ cal.id }}" value="{{ cal.name }}" class="form-control" style="padding: 4px; font-size: 0.85rem;">
-                        <button onclick="submitRename('{{ cal.id }}')" class="btn" style="padding: 4px 8px; font-size: 0.85rem;">Save</button>
-                        <button onclick="hideEditMode('{{ cal.id }}')" class="btn" style="background:#f1f3f4; color:#3c4043; border:1px solid var(--border); padding: 4px 8px; font-size: 0.85rem;">Cancel</button>
+                    <div id="cal-edit-{{ cal.uuid }}" style="display:none; align-items:center; gap: 4px; padding: 4px 8px;">
+                        <input type="text" id="rename-input-{{ cal.uuid }}" value="{{ cal.name }}" class="form-control" style="padding: 4px; font-size: 0.85rem;">
+                        <button onclick="submitRename('{{ cal.uuid }}')" class="btn" style="padding: 4px 8px; font-size: 0.85rem;">Save</button>
+                        <button onclick="hideEditMode('{{ cal.uuid }}')" class="btn" style="background:#f1f3f4; color:#3c4043; border:1px solid var(--border); padding: 4px 8px; font-size: 0.85rem;">Cancel</button>
                     </div>
-                    <div id="cal-delete-{{ cal.id }}" style="display:none; align-items:center; justify-content: space-between; padding: 4px 8px; background: #fff0f0; border-radius: 4px; margin: 4px 8px;">
+                    <div id="cal-delete-{{ cal.uuid }}" style="display:none; align-items:center; justify-content: space-between; padding: 4px 8px; background: #fff0f0; border-radius: 4px; margin: 4px 8px;">
                         <span style="font-size:0.85rem; color:#dc3545; font-weight: 500;">Sure?</span>
                         <div style="display:flex; gap:4px;">
-                            <button onclick="submitDelete('{{ cal.id }}')" class="btn" style="background:#dc3545; padding: 4px 8px; font-size: 0.85rem;">Yes</button>
-                            <button onclick="hideEditMode('{{ cal.id }}')" class="btn" style="background:#f1f3f4; color:#3c4043; border:1px solid var(--border); padding: 4px 8px; font-size: 0.85rem;">No</button>
+                            <button onclick="submitDelete('{{ cal.uuid }}')" class="btn" style="background:#dc3545; padding: 4px 8px; font-size: 0.85rem;">Yes</button>
+                            <button onclick="hideEditMode('{{ cal.uuid }}')" class="btn" style="background:#f1f3f4; color:#3c4043; border:1px solid var(--border); padding: 4px 8px; font-size: 0.85rem;">No</button>
                         </div>
                     </div>
                 </div>
             </li>
             {% endfor %}
         </ul>
+        
+        {% if subscribed_calendars %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0 0.5rem 0;">
+            <h3 style="font-size: 0.875rem; color: #3c4043; font-weight: 500; margin:0;">Other Calendars</h3>
+        </div>
+        <ul class="calendar-list" style="margin-top: 0;">
+            {% for cal in subscribed_calendars %}
+            <li>
+                <div class="{% if cal.uuid == selected_calendar.uuid %}selected-calendar-item{% endif %}" style="margin-bottom: 0.25rem;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                        <a href="?calendar_uuid={{ cal.uuid }}" class="{% if cal.uuid == selected_calendar.uuid %}active{% endif %}" style="flex-grow:1; margin-bottom:0; background:transparent;">
+                            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:#33b679; margin-right:8px;"></span>
+                            {{ cal.name }}
+                        </a>
+                        <form method="post" action="{% url 'unsubscribe_calendar' cal.uuid %}" style="display: inline; margin: 0; padding-right: 8px;">
+                            {% csrf_token %}
+                            <button type="submit" style="background:none; border:none; cursor:pointer; color:#dc3545; font-size: 1.2rem; padding: 0 4px;" title="Unsubscribe">&times;</button>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endif %}
+
         <form id="renameCalForm" method="post" style="display:none;">
             {% csrf_token %}
             <input type="text" name="name" id="renameCalName">
@@ -404,7 +442,7 @@
     const timeInputs = document.getElementById('timeInputs');
     const eventAllDay = document.getElementById('eventAllDay');
     
-    const currentCalendarId = "{{ selected_calendar.id }}";
+    const currentCalendarId = "{{ selected_calendar.uuid }}";
     let calendar, miniCalendar, chatSocket;
     let isUpdatingFromServer = false;
 

@@ -84,7 +84,7 @@ class CalendarConsumer(AsyncWebsocketConsumer):
         
         calendar_id = data.get('calendar_id')
         try:
-            calendar = Calendar.objects.get(id=calendar_id, user=self.scope["user"]) if calendar_id else None
+            calendar = Calendar.objects.get(uuid=calendar_id, user=self.scope["user"]) if calendar_id else None
         except Calendar.DoesNotExist:
             calendar = None
 
@@ -126,7 +126,7 @@ class CalendarConsumer(AsyncWebsocketConsumer):
             calendar_id = data.get('calendar_id')
             if calendar_id:
                 try:
-                    calendar = Calendar.objects.get(id=calendar_id, user=self.scope["user"])
+                    calendar = Calendar.objects.get(uuid=calendar_id, user=self.scope["user"])
                     event.calendar = calendar
                 except Calendar.DoesNotExist:
                     pass
