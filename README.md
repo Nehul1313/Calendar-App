@@ -5,6 +5,9 @@ A real-time, collaborative calendar application built with Django and Django Cha
 ## Features
 
 - **Multiple Calendars:** Create and manage multiple calendars for different purposes.
+- **Public & Private Visibility:** Set your calendars to public to share them with others, or keep them private.
+- **Browse & Subscribe:** Discover other users' public calendars, preview their events seamlessly, and subscribe to add them to your "Other Calendars" list.
+- **Secure URLs:** Calendar URLs use cryptographically secure UUIDs (e.g., `/calendar/550e8400-e29b-41d4-a716-446655440000/`) preventing unguessable access.
 - **Real-time Updates:** Seamless collaboration with real-time event updates across clients using WebSockets (Django Channels).
 - **Event Management:** Add, edit, and organize events with properties like title, description, location, start/end times, and color-coding.
 - **Import/Export:** Easily import and export calendar data using the standard `.ics` (iCalendar) format.

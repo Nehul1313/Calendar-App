@@ -22,6 +22,8 @@ class Event(models.Model):
     color = models.CharField(max_length=20, default='#039be5')
     all_day = models.BooleanField(default=False)
     recurring_rule = models.CharField(max_length=255, blank=True, null=True)
+    exception_dates = models.TextField(blank=True, null=True)
+    recurrence_until = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -38,6 +40,8 @@ class Event(models.Model):
             'color': self.color,
             'allDay': self.all_day,
             'rrule': self.recurring_rule,
+            'exdates': self.exception_dates,
+            'recurrenceUntil': self.recurrence_until.isoformat() if self.recurrence_until else None,
             'user': self.user.username,
             'calendar_id': str(self.calendar.uuid) if self.calendar else None,
         }

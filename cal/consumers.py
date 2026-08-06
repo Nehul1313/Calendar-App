@@ -58,16 +58,26 @@ class CalendarConsumer(AsyncWebsocketConsumer):
                     }
                 )
         elif action == 'delete':
-            event_id = await self.delete_event(data)
-            if event_id:
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        'type': 'calendar_update',
-                        'action': 'delete',
-                        'event': {'id': event_id, 'calendar_id': data.get('calendar_id')}
-                    }
-                )
+            result = await self.delete_event(data)
+            if result:
+                if result['action'] == 'delete':
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'calendar_update',
+                            'action': 'delete',
+                            'event': {'id': result['event_id'], 'calendar_id': data.get('calendar_id')}
+                        }
+                    )
+                else:
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'calendar_update',
+                            'action': 'update',
+                            'event': result['event_dict']
+                        }
+                    )
 
     # Receive message from room group
     async def calendar_update(self, event):
@@ -142,8 +152,32 @@ class CalendarConsumer(AsyncWebsocketConsumer):
             event = Event.objects.get(id=data['id'])
             if event.user != self.scope["user"]:
                 return None
-            event_id = event.id
-            event.delete()
-            return event_id
+            
+            delete_mode = data.get('delete_mode', 'all')
+            if delete_mode == 'all' or not event.recurring_rule:
+                event_id = event.id
+                event.delete()
+                return {'action': 'delete', 'event_id': event_id}
+            
+            occ_date_str = data.get('occurrence_date')
+            if occ_date_str:
+                occ_date = parser.isoparse(occ_date_str)
+                if delete_mode == 'this':
+                    exdates = []
+                    if event.exception_dates:
+                        exdates = event.exception_dates.split(',')
+                    # Store as ISO string
+                    date_iso = occ_date.isoformat()
+                    if date_iso not in exdates:
+                        exdates.append(date_iso)
+                    event.exception_dates = ','.join(exdates)
+                    event.save()
+                    return {'action': 'update', 'event_dict': event.to_dict()}
+                elif delete_mode == 'following':
+                    event.recurrence_until = occ_date
+                    event.save()
+                    return {'action': 'update', 'event_dict': event.to_dict()}
+                    
+            return None
         except Event.DoesNotExist:
             return None
