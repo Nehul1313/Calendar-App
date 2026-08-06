@@ -1,8 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{% static 'cal/cme_logo.png' %}">
     <title>Real-Time Calendar</title>
     <style>
         :root {
@@ -142,6 +144,7 @@
     <nav class="navbar">
         <h1>
             <button id="globalSidebarToggle" title="Toggle Sidebar" style="background:#f1f3f4; border:1px solid #dadce0; border-radius:4px; padding:4px 8px; font-size:1.25rem; color:#3c4043; cursor:pointer; margin-right:8px;">☰</button>
+            <img src="{% static 'cal/cme_logo.png' %}" alt="CME Logo" style="height: 32px; margin-right: 8px;">
             Calendar
         </h1>
         <div class="user-info">
