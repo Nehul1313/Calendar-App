@@ -119,3 +119,26 @@ def export_ics(request):
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")
     response['Content-Disposition'] = f'attachment; filename="{selected_calendar.name}.ics"'
     return response
+
+@login_required
+def rename_calendar(request, calendar_id):
+    if request.method == 'POST':
+        calendar = get_object_or_404(Calendar, id=calendar_id, user=request.user)
+        new_name = request.POST.get('name')
+        if new_name:
+            calendar.name = new_name
+            calendar.save()
+            messages.success(request, f"Calendar renamed to '{new_name}'.")
+    return redirect('calendar')
+
+@login_required
+def delete_calendar(request, calendar_id):
+    if request.method == 'POST':
+        calendar = get_object_or_404(Calendar, id=calendar_id, user=request.user)
+        default_calendar = request.user.calendars.order_by('id').first()
+        if calendar.id == default_calendar.id:
+            messages.error(request, "The default calendar cannot be deleted.")
+        else:
+            calendar.delete()
+            messages.success(request, "Calendar deleted successfully.")
+    return redirect('calendar')

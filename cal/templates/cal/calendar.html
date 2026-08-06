@@ -47,6 +47,11 @@
         padding: 1px 4px;
     }
 
+    .selected-calendar-item {
+        background: #f1f3f4;
+        border-radius: 0 16px 16px 0;
+    }
+
     .layout {
         display: flex;
         flex: 1;
@@ -227,13 +232,40 @@
         <ul class="calendar-list" style="margin-top: 0;">
             {% for cal in calendars %}
             <li>
-                <a href="?calendar_id={{ cal.id }}" class="{% if cal.id == selected_calendar.id %}active{% endif %}">
-                    <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:#1a73e8; margin-right:8px;"></span>
-                    {{ cal.name }}
-                </a>
+                <div class="{% if cal.id == selected_calendar.id %}selected-calendar-item{% endif %}" style="margin-bottom: 0.25rem;">
+                    <div id="cal-view-{{ cal.id }}" style="display:flex; align-items:center; justify-content:space-between;">
+                        <a href="?calendar_id={{ cal.id }}" class="{% if cal.id == selected_calendar.id %}active{% endif %}" style="flex-grow:1; margin-bottom:0; background:transparent;">
+                            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:#1a73e8; margin-right:8px;"></span>
+                            {{ cal.name }}
+                        </a>
+                        <div style="display:flex; gap:4px; padding-right:8px;">
+                            <button onclick="showRename('{{ cal.id }}')" style="background:none; border:none; cursor:pointer; color:#5f6368; font-size: 1.1rem; padding: 2px 4px;" title="Rename">&#9998;</button>
+                            <button onclick="showDelete('{{ cal.id }}', '{{ forloop.first|lower }}')" style="background:none; border:none; cursor:pointer; color:#dc3545; font-size: 1.1rem; padding: 2px 4px;" title="Delete">&#128465;</button>
+                        </div>
+                    </div>
+                    <div id="cal-edit-{{ cal.id }}" style="display:none; align-items:center; gap: 4px; padding: 4px 8px;">
+                        <input type="text" id="rename-input-{{ cal.id }}" value="{{ cal.name }}" class="form-control" style="padding: 4px; font-size: 0.85rem;">
+                        <button onclick="submitRename('{{ cal.id }}')" class="btn" style="padding: 4px 8px; font-size: 0.85rem;">Save</button>
+                        <button onclick="hideEditMode('{{ cal.id }}')" class="btn" style="background:#f1f3f4; color:#3c4043; border:1px solid var(--border); padding: 4px 8px; font-size: 0.85rem;">Cancel</button>
+                    </div>
+                    <div id="cal-delete-{{ cal.id }}" style="display:none; align-items:center; justify-content: space-between; padding: 4px 8px; background: #fff0f0; border-radius: 4px; margin: 4px 8px;">
+                        <span style="font-size:0.85rem; color:#dc3545; font-weight: 500;">Sure?</span>
+                        <div style="display:flex; gap:4px;">
+                            <button onclick="submitDelete('{{ cal.id }}')" class="btn" style="background:#dc3545; padding: 4px 8px; font-size: 0.85rem;">Yes</button>
+                            <button onclick="hideEditMode('{{ cal.id }}')" class="btn" style="background:#f1f3f4; color:#3c4043; border:1px solid var(--border); padding: 4px 8px; font-size: 0.85rem;">No</button>
+                        </div>
+                    </div>
+                </div>
             </li>
             {% endfor %}
         </ul>
+        <form id="renameCalForm" method="post" style="display:none;">
+            {% csrf_token %}
+            <input type="text" name="name" id="renameCalName">
+        </form>
+        <form id="deleteCalForm" method="post" style="display:none;">
+            {% csrf_token %}
+        </form>
     </div>
     
     <div class="resizer" id="resizer"></div>
@@ -372,11 +404,51 @@
     let calendar, miniCalendar, chatSocket;
     let isUpdatingFromServer = false;
 
+    function hideEditMode(id) {
+        document.getElementById('cal-view-' + id).style.display = 'flex';
+        document.getElementById('cal-edit-' + id).style.display = 'none';
+        document.getElementById('cal-delete-' + id).style.display = 'none';
+    }
+
+    function showRename(id) {
+        document.getElementById('cal-view-' + id).style.display = 'none';
+        document.getElementById('cal-edit-' + id).style.display = 'flex';
+        document.getElementById('cal-delete-' + id).style.display = 'none';
+        document.getElementById('rename-input-' + id).focus();
+    }
+    
+    function submitRename(id) {
+        const newName = document.getElementById('rename-input-' + id).value;
+        if (newName && newName.trim() !== "") {
+            const form = document.getElementById('renameCalForm');
+            form.action = `/calendar/${id}/rename/`;
+            document.getElementById('renameCalName').value = newName.trim();
+            form.submit();
+        }
+    }
+
+    function showDelete(id, isDefault) {
+        if (isDefault === 'true' || isDefault === true) {
+            alert("This is your default calendar and cannot be deleted.");
+            return;
+        }
+        document.getElementById('cal-view-' + id).style.display = 'none';
+        document.getElementById('cal-edit-' + id).style.display = 'none';
+        document.getElementById('cal-delete-' + id).style.display = 'flex';
+    }
+    
+    function submitDelete(id) {
+        const form = document.getElementById('deleteCalForm');
+        form.action = `/calendar/${id}/delete/`;
+        form.submit();
+    }
+
     function toggleTimeInputs() {
         if (eventAllDay.checked) {
             timeInputs.style.display = 'none';
             document.getElementById('eventStartTime').removeAttribute('required');
             document.getElementById('eventEndTime').removeAttribute('required');
+            document.getElementById('eventEndDate').value = document.getElementById('eventStartDate').value;
         } else {
             timeInputs.style.display = 'flex';
             document.getElementById('eventStartTime').setAttribute('required', 'required');
@@ -466,7 +538,7 @@
             
             allDay = info.allDay;
             startDate = info.start;
-            endDate = info.end || info.start;
+            endDate = allDay ? info.start : (info.end || info.start);
         }
         
         document.getElementById('eventStartDate').value = extractDate(startDate);
@@ -726,6 +798,13 @@
         // Click outside modal to close
         document.addEventListener('mousedown', function(e) {
             if (eventModal.classList.contains('show') && !eventModal.contains(e.target) && !calendarEl.contains(e.target)) {
+                closeModal();
+            }
+        });
+
+        // Escape key to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && eventModal.classList.contains('show')) {
                 closeModal();
             }
         });
