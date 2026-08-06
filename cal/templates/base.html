@@ -137,6 +137,67 @@
         @keyframes fadeOut {
             to { opacity: 0; }
         }
+
+        .profile-dropdown {
+            position: relative;
+            display: inline-block;
+            margin-left: 0.5rem;
+        }
+        .profile-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            transition: opacity 0.2s;
+        }
+        .profile-icon:hover {
+            opacity: 0.9;
+        }
+        .profile-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 8px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-width: 180px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .profile-menu-header {
+            padding: 12px 16px;
+            color: var(--text-color);
+            background-color: #f8f9fa;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.95rem;
+            word-break: break-all;
+        }
+        .profile-menu-item {
+            padding: 10px 16px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: block;
+            transition: background 0.2s;
+            box-sizing: border-box;
+        }
+        .profile-menu-item:hover {
+            background-color: #f1f3f4;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -154,13 +215,24 @@
                     <input type="hidden" name="calendar_id" value="{{ selected_calendar.id }}">
                     <input type="file" id="icsFileInput" name="ics_file" accept=".ics" onchange="document.getElementById('importForm').submit();">
                 </form>
-                <span>Welcome, <strong>{{ user.username }}</strong></span>
                 <button type="button" onclick="document.getElementById('icsFileInput').click();" class="btn" style="background: white; color: var(--primary); border: 1px solid var(--border);">Import</button>
                 <a href="{% url 'export_ics' %}?calendar_id={{ selected_calendar.id }}" class="btn" style="background: white; color: var(--primary); border: 1px solid var(--border);">Export</a>
-                <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn">Logout</button>
-                </form>
+                
+                <div class="profile-dropdown">
+                    <button id="profileIconBtn" class="profile-icon">
+                        {{ user.username|make_list|first|upper }}
+                    </button>
+                    <div id="profileMenu" class="profile-menu hidden">
+                        <div class="profile-menu-header">
+                            <strong>{{ user.username }}</strong>
+                        </div>
+                        <a href="{% url 'password_change' %}" class="profile-menu-item">Reset Password</a>
+                        <form action="{% url 'logout' %}" method="post" style="margin:0;">
+                            {% csrf_token %}
+                            <button type="submit" class="profile-menu-item" style="width:100%; text-align:left; border:none; background:none; cursor:pointer; font-family:inherit;">Logout</button>
+                        </form>
+                    </div>
+                </div>
             {% else %}
                 <a href="{% url 'login' %}" class="btn">Login</a>
             {% endif %}
@@ -201,5 +273,23 @@
     </script>
     {% endif %}
     {% block extra_scripts %}{% endblock %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileIconBtn = document.getElementById('profileIconBtn');
+            const profileMenu = document.getElementById('profileMenu');
+            if (profileIconBtn && profileMenu) {
+                profileIconBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileMenu.classList.toggle('hidden');
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (!profileMenu.contains(e.target) && !profileIconBtn.contains(e.target)) {
+                        profileMenu.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
