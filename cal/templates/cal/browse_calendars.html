@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="padding: 2rem; max-width: 800px; margin: 0 auto; width: 100%;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="margin: 0; color: #3c4043;">Browse Public Calendars</h2>
+        <a href="{% url 'calendar' %}" class="btn" style="background: white; color: var(--text-color); border: 1px solid var(--border);">Back to My Calendar</a>
+    </div>
+
+    <form method="get" action="{% url 'browse_calendars' %}" style="margin-bottom: 2rem; display: flex; gap: 1rem;">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by calendar name or username..." style="flex: 1; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border); font-size: 1rem;">
+        <button type="submit" class="btn" style="padding: 0.75rem 1.5rem; font-size: 1rem;">Search</button>
+    </form>
+
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for calendar in calendars %}
+        <div style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div>
+                <h3 style="margin: 0 0 0.5rem 0;">
+                    <a href="{% url 'preview_calendar' calendar.uuid %}" style="color: #1a73e8; text-decoration: none;" title="Preview calendar">{{ calendar.name }}</a>
+                </h3>
+                <p style="margin: 0; color: #5f6368; font-size: 0.9rem;">By <strong>{{ calendar.user.username }}</strong></p>
+            </div>
+            <div>
+                {% if calendar.uuid in subscribed_uuids %}
+                    <form method="post" action="{% url 'unsubscribe_calendar' calendar.uuid %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn" style="background: #f1f3f4; color: #3c4043; border: 1px solid var(--border);">Unsubscribe</button>
+                    </form>
+                {% else %}
+                    <form method="post" action="{% url 'subscribe_calendar' calendar.uuid %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn">Subscribe</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align: center; padding: 3rem; background: white; border: 1px solid var(--border); border-radius: 8px; color: #5f6368;">
+            {% if query %}
+            <p style="margin: 0; font-size: 1.1rem;">No public calendars found matching '{{ query }}'.</p>
+            {% else %}
+            <p style="margin: 0; font-size: 1.1rem;">There are no public calendars available at the moment.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

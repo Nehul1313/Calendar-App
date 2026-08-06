@@ -1,9 +1,13 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import User
 
 class Calendar(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='calendars')
+    is_public = models.BooleanField(default=False)
+    subscribers = models.ManyToManyField(User, related_name='subscribed_calendars', blank=True)
 
     def __str__(self):
         return self.name
@@ -35,5 +39,5 @@ class Event(models.Model):
             'allDay': self.all_day,
             'rrule': self.recurring_rule,
             'user': self.user.username,
-            'calendar_id': self.calendar.id if self.calendar else None,
+            'calendar_id': str(self.calendar.uuid) if self.calendar else None,
         }
