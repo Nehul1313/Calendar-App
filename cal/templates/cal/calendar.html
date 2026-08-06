@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 
 {% block extra_head %}
+<script src='https://cdn.jsdelivr.net/npm/rrule@2.8.1/dist/es5/rrule.min.js'></script>
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/@fullcalendar/rrule@6.1.11/index.global.min.js'></script>
 <style>
     /* Clean light theme */
     .fc {
@@ -326,6 +328,7 @@
     </div>
     <form id="eventForm" novalidate>
         <input type="hidden" id="eventId">
+        <input type="hidden" id="eventStartStr">
         
         <div class="form-group">
             <input type="text" id="eventTitle" class="form-control" placeholder="Add title" required style="font-size: 1.25rem; border: none; border-bottom: 1px solid #dadce0; border-radius: 0; padding-left: 0;">
@@ -381,6 +384,17 @@
                     <button type="button" id="confirmDeleteBtn" class="btn" style="background:#dc3545; padding: 0.25rem 0.5rem; font-size:0.75rem;">Yes</button>
                     <button type="button" onclick="document.getElementById('deleteConfirmWrap').style.display='none'; document.getElementById('deleteBtn').style.display='block';" class="btn" style="background:#f1f3f4; color:#3c4043; border: 1px solid var(--border); padding: 0.25rem 0.5rem; font-size:0.75rem;">No</button>
                 </div>
+                
+                <div id="recurringDeleteWrap" style="display:none; flex-direction:column; gap:4px; background:#fff; padding:8px; border-radius:4px; border:1px solid #dc3545; position: absolute; bottom: 60px; right: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10;">
+                    <label style="font-size: 0.85rem; margin-bottom: 2px;"><input type="radio" name="delMode" value="this" checked> This event</label>
+                    <label style="font-size: 0.85rem; margin-bottom: 2px;"><input type="radio" name="delMode" value="following"> This and following events</label>
+                    <label style="font-size: 0.85rem; margin-bottom: 8px;"><input type="radio" name="delMode" value="all"> All events</label>
+                    <div style="display:flex; gap: 4px; justify-content: flex-end;">
+                        <button type="button" id="confirmRecurringDeleteBtn" class="btn" style="background:#dc3545; padding: 0.25rem 0.5rem; font-size:0.75rem;">Delete</button>
+                        <button type="button" onclick="document.getElementById('recurringDeleteWrap').style.display='none'; document.getElementById('deleteBtn').style.display='block';" class="btn" style="background:#f1f3f4; color:#3c4043; border: 1px solid var(--border); padding: 0.25rem 0.5rem; font-size:0.75rem;">Cancel</button>
+                    </div>
+                </div>
+
                 <button type="button" id="deleteBtn" class="btn" style="background:#dc3545; display:none;">Delete</button>
                 <button type="submit" class="btn" style="flex:0 0 auto;">Save</button>
             </div>
@@ -554,6 +568,7 @@
         
         if (info && info.event) {
             document.getElementById('eventId').value = info.event.id;
+            document.getElementById('eventStartStr').value = info.event.startStr;
             document.getElementById('deleteBtn').style.display = 'block';
             document.getElementById('deleteConfirmWrap').style.display = 'none';
             document.getElementById('eventTitle').value = info.event.title;
@@ -562,7 +577,7 @@
             const eventColor = info.event.backgroundColor || '#039be5';
             document.getElementById('eventColor').value = eventColor;
             updateColorDots(eventColor);
-            document.getElementById('eventRecurring').value = info.event.extendedProps.rrule || '';
+            document.getElementById('eventRecurring').value = info.event.extendedProps.rrule_str || '';
             
             allDay = info.event.allDay;
             startDate = info.event.start;
@@ -616,9 +631,50 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        function buildEventObject(evt) {
+            let eventObj = {
+                id: evt.id,
+                title: evt.title,
+                user: evt.user,
+                description: evt.description,
+                location: evt.location,
+                color: evt.color,
+                allDay: evt.allDay,
+                extendedProps: {
+                    rrule_str: evt.rrule,
+                }
+            };
+
+            if (evt.rrule) {
+                let rruleObj = {
+                    freq: evt.rrule,
+                    dtstart: evt.start
+                };
+                if (evt.recurrenceUntil) {
+                    rruleObj.until = evt.recurrenceUntil;
+                }
+                eventObj.rrule = rruleObj;
+                
+                if (evt.exdates) {
+                    eventObj.exdate = evt.exdates.split(',');
+                }
+                
+                let startDt = new Date(evt.start);
+                let endDt = new Date(evt.end || evt.start);
+                let diff = endDt - startDt;
+                let hours = Math.floor(diff / (1000 * 60 * 60));
+                let mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                eventObj.duration = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+            } else {
+                eventObj.start = evt.start;
+                eventObj.end = evt.end;
+            }
+            return eventObj;
+        }
+
         const calendarEl = document.getElementById('calendar');
         const miniCalendarEl = document.getElementById('mini-calendar');
-        const initialEvents = JSON.parse('{{ initial_events_json|escapejs }}');
+        const initialEvents = JSON.parse('{{ initial_events_json|escapejs }}').map(buildEventObject);
         
         // Setup WebSocket
         const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
@@ -695,7 +751,7 @@
                     end: info.event.endStr,
                     color: info.event.backgroundColor,
                     all_day: info.event.allDay,
-                    recurring_rule: info.event.extendedProps.rrule,
+                    recurring_rule: info.event.extendedProps.rrule_str || '',
                     calendar_id: currentCalendarId
                 };
                 chatSocket.send(JSON.stringify(eventData));
@@ -851,23 +907,45 @@
         if (deleteBtn) {
             deleteBtn.addEventListener('click', function() {
                 deleteBtn.style.display = 'none';
-                document.getElementById('deleteConfirmWrap').style.display = 'flex';
+                const isRecurring = document.getElementById('eventRecurring').value !== '';
+                if (isRecurring) {
+                    document.getElementById('recurringDeleteWrap').style.display = 'flex';
+                } else {
+                    document.getElementById('deleteConfirmWrap').style.display = 'flex';
+                }
             });
         }
         
+        function sendDeleteReq(mode) {
+            const id = document.getElementById('eventId').value;
+            const occurrenceDate = document.getElementById('eventStartStr').value;
+            
+            if (id) {
+                chatSocket.send(JSON.stringify({
+                    action: 'delete',
+                    id: id,
+                    calendar_id: currentCalendarId,
+                    delete_mode: mode,
+                    occurrence_date: occurrenceDate
+                }));
+                document.getElementById('deleteConfirmWrap').style.display = 'none';
+                document.getElementById('recurringDeleteWrap').style.display = 'none';
+                closeModal();
+            }
+        }
+
         const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
         if (confirmDeleteBtn) {
             confirmDeleteBtn.addEventListener('click', function() {
-                const id = document.getElementById('eventId').value;
-                if (id) {
-                    chatSocket.send(JSON.stringify({
-                        action: 'delete',
-                        id: id,
-                        calendar_id: currentCalendarId
-                    }));
-                    document.getElementById('deleteConfirmWrap').style.display = 'none';
-                    closeModal();
-                }
+                sendDeleteReq('all');
+            });
+        }
+
+        const confirmRecurringDeleteBtn = document.getElementById('confirmRecurringDeleteBtn');
+        if (confirmRecurringDeleteBtn) {
+            confirmRecurringDeleteBtn.addEventListener('click', function() {
+                const mode = document.querySelector('input[name="delMode"]:checked').value;
+                sendDeleteReq(mode);
             });
         }
 
@@ -897,30 +975,14 @@
 
             if (data.action === 'create') {
                 if (!calendar.getEventById(evt.id)) {
-                    calendar.addEvent({
-                        id: evt.id,
-                        title: evt.title,
-                        start: evt.start,
-                        end: evt.end,
-                        user: evt.user,
-                        description: evt.description,
-                        location: evt.location,
-                        color: evt.color,
-                        allDay: evt.allDay,
-                        rrule: evt.rrule
-                    });
+                    calendar.addEvent(buildEventObject(evt));
                     if (typeof showToast === 'function') showToast("Event created successfully");
                 }
             } else if (data.action === 'update') {
                 const existingEvent = calendar.getEventById(evt.id);
                 if (existingEvent) {
-                    existingEvent.setProp('title', evt.title);
-                    existingEvent.setDates(evt.start, evt.end, { allDay: evt.allDay });
-                    existingEvent.setProp('color', evt.color);
-                    existingEvent.setExtendedProp('description', evt.description);
-                    existingEvent.setExtendedProp('location', evt.location);
-                    existingEvent.setExtendedProp('user', evt.user);
-                    existingEvent.setExtendedProp('rrule', evt.rrule);
+                    existingEvent.remove(); // Removing and re-adding is safer for rrule changes
+                    calendar.addEvent(buildEventObject(evt));
                     if (typeof showToast === 'function') showToast("Event updated successfully");
                 }
             } else if (data.action === 'delete') {
