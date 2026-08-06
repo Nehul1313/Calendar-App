@@ -9,7 +9,7 @@ A real-time, collaborative calendar application built with Django and Django Cha
 - **Browse & Subscribe:** Discover other users' public calendars, preview their events seamlessly, and subscribe to add them to your "Other Calendars" list.
 - **Secure URLs:** Calendar URLs use cryptographically secure UUIDs (e.g., `/calendar/550e8400-e29b-41d4-a716-446655440000/`) preventing unguessable access.
 - **Real-time Updates:** Seamless collaboration with real-time event updates across clients using WebSockets (Django Channels).
-- **Event Management:** Add, edit, and organize events with properties like title, description, location, start/end times, and color-coding.
+- **Event Management:** Add, edit, and organize events with properties like title, description, location, start/end times, and color-coding. Includes full support for recurring events with smart deletion options (e.g., deleting a single occurrence vs. the entire series).
 - **Import/Export:** Easily import and export calendar data using the standard `.ics` (iCalendar) format.
 - **User Authentication:** Secure individual user accounts and data privacy.
 

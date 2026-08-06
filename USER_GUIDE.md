@@ -27,7 +27,7 @@ You can create multiple calendars to organize different areas of your life (e.g.
   - Color Label
 - **Edit an Event:** Click on an existing event to edit its details.
 - **Move an Event:** Drag and drop events directly on the calendar grid to change their dates or times.
-- **Delete an Event:** Click on an event and use the "Delete" button in the dialog.
+- **Delete an Event:** Click on an event and use the "Delete" button in the dialog. For recurring events, you will be prompted to choose whether to delete just **This event**, **This and following events**, or **All events** in the series.
 
 ## 4. Public vs Private Calendars
 
