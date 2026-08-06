@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .models import Event, Calendar
@@ -37,6 +38,7 @@ def create_calendar(request):
         name = request.POST.get('name')
         if name:
             Calendar.objects.create(name=name, user=request.user)
+            messages.success(request, f"Calendar '{name}' created successfully!")
     return redirect('calendar')
 
 @login_required
@@ -81,6 +83,7 @@ def import_ics(request):
                     user=request.user
                 )
     
+        messages.success(request, "Calendar imported successfully!")
         url = f"/?calendar_id={calendar_id}" if calendar_id else "/"
         return redirect(url)
     return redirect('calendar')

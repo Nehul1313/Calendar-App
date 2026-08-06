@@ -103,6 +103,38 @@
         .hidden {
             display: none !important;
         }
+
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .toast {
+            background: #323232;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(100%);
+            animation: slideIn 0.3s forwards, fadeOut 0.3s forwards 3s;
+            font-size: 0.9rem;
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        @keyframes slideIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            to { opacity: 0; }
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -140,6 +172,31 @@
         &copy; {% now "Y" %} CME, Pune. All rights reserved.
     </footer>
 
+    <div id="toast-container"></div>
+    <script>
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3300);
+        }
+    </script>
+    {% if messages %}
+    <div id="django-messages" style="display: none;">
+        {% for message in messages %}
+        <span class="django-message">{{ message }}</span>
+        {% endfor %}
+    </div>
+    <script>
+        document.querySelectorAll('.django-message').forEach(el => {
+            showToast(el.textContent);
+        });
+    </script>
+    {% endif %}
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
