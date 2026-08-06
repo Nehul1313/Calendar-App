@@ -5,7 +5,7 @@
     <div style="background: #fff; padding: 2.5rem; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid var(--border);">
         <div style="text-align: center; margin-bottom: 2rem;">
             <h2 style="margin: 0; font-size: 1.75rem; color: #3c4043; font-weight: 600;">Welcome Back</h2>
-            <p style="color: #5f6368; margin-top: 0.5rem; font-size: 0.95rem;">Please log in to your Collaborative Calendar</p>
+            <p style="color: #5f6368; margin-top: 0.5rem; font-size: 0.95rem;">Please log in to your Calendar</p>
         </div>
         
         <form method="post" action="{% url 'login' %}">
@@ -16,7 +16,10 @@
             </div>
             <div style="margin-bottom: 1.5rem;">
                 <label for="id_password" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: #3c4043;">Password</label>
-                <input type="password" name="password" autocomplete="current-password" required id="id_password" style="width: 100%; padding: 0.875rem; border-radius: 6px; border: 1px solid var(--border); background: #fff; color: #3c4043; box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='var(--border)'">
+                <div style="position: relative;">
+                    <input type="password" name="password" autocomplete="current-password" required id="id_password" style="width: 100%; padding: 0.875rem; border-radius: 6px; border: 1px solid var(--border); background: #fff; color: #3c4043; box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s; padding-right: 3rem;" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='var(--border)'">
+                    <button type="button" onclick="const p = document.getElementById('id_password'); p.type = p.type === 'password' ? 'text' : 'password';" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #5f6368; padding: 0;">👁️</button>
+                </div>
             </div>
             
             {% if form.errors %}
@@ -29,9 +32,7 @@
             <input type="hidden" name="next" value="{{ next }}">
         </form>
         
-        <div style="margin-top: 2rem; text-align: center; color: #9aa0a6; font-size: 0.8rem;">
-            &copy; {% now "Y" %} CME, Pune. All rights reserved.
-        </div>
+
     </div>
 </div>
 {% endblock %}
