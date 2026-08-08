@@ -11,6 +11,12 @@ def open_browser():
         print(f"Could not open browser automatically: {e}")
 
 def main():
+    if getattr(sys, 'frozen', False):
+        print("[INFO] Starting CalendarApp from bundled executable...")
+    else:
+        print("[INFO] Starting CalendarApp from Python script...")
+        
+    print("[INFO] Initializing Django environment...")
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
     try:
         from django.core.management import execute_from_command_line
@@ -24,24 +30,26 @@ def main():
     
     django.setup()
     
-    print("Running database migrations...")
+    print("[INFO] Checking and applying database migrations...")
     # Run migrations silently
     execute_from_command_line([sys.argv[0], 'migrate'])
 
+    print("[INFO] Verifying superuser account...")
     # Auto-create superuser if it doesn't exist
     from django.contrib.auth import get_user_model
     User = get_user_model()
     
     if not User.objects.filter(username='admin').exists():
-        print("Creating default superuser: admin / admin")
+        print("[INFO] Creating default superuser: admin / admin")
         User.objects.create_superuser('admin', 'admin@example.com', 'admin')
     
+    print("[INFO] Preparing to launch web browser...")
     # Launch browser after a short delay
     Timer(1.5, open_browser).start()
     
     # Run the Daphne ASGI server via Django runserver with --noreload
     # (noreload is required for PyInstaller frozen executables)
-    print("Starting Django server at http://127.0.0.1:8000...")
+    print("[INFO] Starting Django web server at http://127.0.0.1:8000...")
     execute_from_command_line([sys.argv[0], 'runserver', '127.0.0.1:8000', '--noreload'])
 
 if __name__ == '__main__':
